@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Liquid Glass Portfolio Builder</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- React & ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- Babel CDN for inline JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  
+  <!-- Google Fonts: Pretendard & Noto Sans KR -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+      background: radial-gradient(circle at 10% 20%, rgba(254, 215, 170, 0.5) 0%, rgba(255, 255, 255, 1) 40%),
+                  radial-gradient(circle at 90% 80%, rgba(251, 146, 60, 0.3) 0%, rgba(255, 247, 237, 1) 50%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.85);
+      box-shadow: 0 10px 30px -10px rgba(249, 115, 22, 0.12);
+    }
+
+    .glass-panel-orange {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 237, 213, 0.7) 100%);
+      backdrop-filter: blur(20px) saturate(190%);
+      -webkit-backdrop-filter: blur(20px) saturate(190%);
+      border: 1px solid rgba(251, 146, 60, 0.45);
+      box-shadow: 0 12px 40px 0 rgba(249, 115, 22, 0.2);
+    }
+
+    .glass-btn {
+      background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+      color: white;
+      box-shadow: 0 8px 24px -4px rgba(249, 115, 22, 0.4);
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px -4px rgba(249, 115, 22, 0.55);
+    }
+
+    .glass-btn-secondary {
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.9);
+      color: #c2410c;
+      transition: all 0.2s ease;
+    }
+    .glass-btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.95);
+      border-color: rgba(249, 115, 22, 0.5);
+      color: #ea580c;
+    }
+
+    @keyframes shine {
+      to { background-position: 200% center; }
+    }
+    .text-animated-gradient {
+      background: linear-gradient(90deg, #ea580c 0%, #f59e0b 35%, #ea580c 70%, #c2410c 100%);
+      background-size: 200% auto;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      animation: shine 5s linear infinite;
+    }
+  </style>
+</head>
+<body class="text-slate-900 selection:bg-orange-500 selection:text-white">
+  
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect } = React;
+
+    const ASPECT_RATIOS = [
+      { id: '16:9', name: '16:9 가로 슬라이드', ratioText: '16 : 9', desc: '발표 및 모니터 웹 슬라이드 최적화' },
+      { id: '4:3', name: '4:3 표준 문서', ratioText: '4 : 3', desc: '클래식 문서 및 태블릿 가독성 비율' },
+      { id: 'a4', name: 'A4 세로 포트폴리오', ratioText: 'A4 문서', desc: 'PDF 출력 및 이력서 겸용 양식' },
+      { id: '1:1', name: '1:1 정방형 갤러리', ratioText: '1 : 1', desc: '디자인 카드 및 SNS 갤러리형' }
+    ];
+
+    const INITIAL_SLIDE = {
+      id: 'slide-1',
+      title: '메인 커버',
+      elements: [
+        { id: 'el-tag', type: 'badge', x: 5, y: 10, width: 280, content: '✨ Liquid Glass Portfolio', fontFamily: 'Pretendard', fontSize: 14, color: '#ea580c', glassEffect: true },
+        { id: 'el-title', type: 'text', x: 5, y: 24, width: 550, content: '창의적인 아이디어를 담은\n프론트엔드 개발자 포트폴리오', fontFamily: 'Pretendard', fontSize: 32, fontWeight: 'bold', color: '#1e293b', glassEffect: false },
+        { id: 'el-desc', type: 'text', x: 5, y: 52, width: 480, content: '사용자 경험과 심미성을 극대화하는 리퀴드 글래스 UI 기반 포트폴리오입니다.', fontFamily: 'Pretendard', fontSize: 16, color: '#475569', glassEffect: false },
+        { id: 'el-img', type: 'image', x: 62, y: 15, width: 300, content: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80', glassEffect: true }
+      ]
+    };
+
+    function App() {
+      const [user, setUser] = useState(null);
+      const [view, setView] = useState('landing');
+      const [selectedRatio, setSelectedRatio] = useState('16:9');
+      const [slide, setSlide] = useState(INITIAL_SLIDE);
+      const [selectedElId, setSelectedElId] = useState(null);
+      const [isAuthOpen, setIsAuthOpen] = useState(false);
+      const [isRatioOpen, setIsRatioOpen] = useState(false);
+      const [toast, setToast] = useState(null);
+
+      const showToast = (msg) => {
+        setToast(msg);
+        setTimeout(() => setToast(null), 3000);
+      };
+
+      const handleGoogleLogin = () => {
+        setUser({ name: '홍길동', email: 'gildong@gmail.com', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80' });
+        setIsAuthOpen(false);
+        showToast('Google 계정으로 성공적으로 로그인되었습니다!');
+      };
+
+      const selectedEl = slide.elements.find(e => e.id === selectedElId) || null;
+
+      const updateSelectedElement = (updated) => {
+        if (!selectedElId) return;
+        setSlide(prev => ({
+          ...prev,
+          elements: prev.elements.map(el => el.id === selectedElId ? { ...el, ...updated } : el)
+        }));
+      };
+
+      const addElement = (type) => {
+        const newEl = {
+          id: 'el-' + Date.now(),
+          type,
+          x: 10,
+          y: 30,
+          width: 320,
+          content: type === 'image' ? 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80' : '새로운 내용을 입력하세요',
+          fontFamily: 'Pretendard',
+          fontSize: type === 'text' ? 20 : 14,
+          color: '#1e293b',
+          glassEffect: type === 'image' || type === 'badge'
+        };
+        setSlide(prev => ({ ...prev, elements: [...prev.elements, newEl] }));
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col">
+          {toast && (
+            <div className="fixed bottom-6 right-6 z-50 px-5 py-3 rounded-2xl glass-panel-orange font-bold text-sm text-slate-900 shadow-2xl flex items-center gap-2">
+              <span>🍊</span>
+              <span>{toast}</span>
+            </div>
+          )}
+
+          <header className="sticky top-0 z-40 px-6 py-3.5 bg-white/40 backdrop-blur-md border-b border-orange-100 flex items-center justify-between">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => setView('landing')}>
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-400 flex items-center justify-center text-white font-extrabold shadow-md">
+                L
+              </div>
+              <span className="font-extrabold text-lg bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+                Liquid Portfolio
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3">
+              {user ? (
+                <div className="flex items-center gap-3 bg-white/70 px-3 py-1.5 rounded-full border border-orange-200">
+                  <img src={user.avatar} className="w-7 h-7 rounded-full object-cover border border-orange-500" />
+                  <span className="text-xs font-bold text-slate-800">{user.name}</span>
+                  <button onClick={() => setUser(null)} className="text-xs text-orange-600 font-bold ml-1 hover:underline">로그아웃</button>
+                </div>
+              ) : (
+                <button onClick={() => setIsAuthOpen(true)} className="px-4 py-2 rounded-xl glass-btn-secondary font-bold text-xs flex items-center gap-2">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                    <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 10.8 0 12s.7 2.3 1.9 4.7l3.7-2.9z"/>
+                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+                  </svg>
+                  Google 로그인
+                </button>
+              )}
+
+              <button onClick={() => setIsRatioOpen(true)} className="px-5 py-2 rounded-xl glass-btn font-extrabold text-xs shadow-md">
+                포트폴리오 작성하기
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1">
+            {view === 'landing' ? (
+              <div className="py-20 px-6 text-center max-w-4xl mx-auto space-y-6">
+                <div className="inline-block px-4 py-1.5 rounded-full glass-panel-orange text-xs font-bold text-orange-700 mb-2">
+                  ✨ 2026 Liquid Glass Portfolio Builder
+                </div>
+
+                <h1 className="text-4xl sm:text-6xl font-extrabold text-slate-900 leading-tight">
+                  <span className="block mb-2">나만의 가치를 빛내는</span>
+                  <span className="text-animated-gradient">간편하고 쉽게 쓰는 포트폴리오</span>
+                </h1>
+
+                <p className="text-slate-600 text-lg max-w-2xl mx-auto font-medium">
+                  원하는 비율 선택(16:9, 4:3, A4, 1:1)부터 폰트, 글자 크기, 사진 커스텀까지! 
+                  투명하고 영롱한 리퀴드 글래스 디자인으로 완성해 보세요.
+                </p>
+
+                <div className="pt-4 flex justify-center gap-4">
+                  <button onClick={() => setIsRatioOpen(true)} className="px-8 py-4 rounded-2xl glass-btn font-extrabold text-base shadow-xl">
+                    🚀 지금 포트폴리오 만들기
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="p-6 max-w-6xl mx-auto space-y-4">
+                <div className="glass-panel-orange p-4 rounded-2xl flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-bold text-slate-700">현재 비율: <strong className="text-orange-600">{selectedRatio}</strong></span>
+                    <button onClick={() => setIsRatioOpen(true)} className="px-3 py-1 bg-white/80 rounded-lg text-xs font-bold text-slate-700">비율 변경</button>
+                  </div>
+
+                  {selectedEl ? (
+                    <div className="flex items-center gap-4 text-xs font-bold">
+                      <div className="flex items-center gap-1">
+                        <span>폰트:</span>
+                        <select value={selectedEl.fontFamily} onChange={(e) => updateSelectedElement({ fontFamily: e.target.value })} className="px-2 py-1 rounded bg-white border border-orange-200">
+                          <option value="Pretendard">Pretendard</option>
+                          <option value="Noto Sans KR">Noto Sans KR</option>
+                          <option value="Outfit">Outfit</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span>크기:</span>
+                        <input type="number" value={selectedEl.fontSize} onChange={(e) => updateSelectedElement({ fontSize: Number(e.target.value) })} className="w-14 px-2 py-1 rounded bg-white border text-center"/>
+                        <span>px</span>
+                      </div>
+
+                      <div className="flex items-center gap-1">
+                        <span>색상:</span>
+                        <input type="color" value={selectedEl.color || '#1e293b'} onChange={(e) => updateSelectedElement({ color: e.target.value })} className="w-6 h-6 rounded cursor-pointer"/>
+                      </div>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-slate-500">요소를 클릭하면 폰트와 크기를 편집할 수 있습니다.</span>
+                  )}
+
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => addElement('text')} className="px-3 py-1.5 bg-white text-slate-800 rounded-xl text-xs font-bold border border-orange-200">+ 텍스트</button>
+                    <button onClick={() => addElement('image')} className="px-3 py-1.5 bg-orange-600 text-white rounded-xl text-xs font-bold shadow-md">+ 사진</button>
+                  </div>
+                </div>
+
+                <div className="flex justify-center py-6 bg-slate-900/5 rounded-3xl p-4">
+                  <div className={`relative w-full max-w-4xl bg-white/80 rounded-2xl shadow-2xl overflow-hidden border border-white p-8 ${
+                    selectedRatio === '16:9' ? 'aspect-video' :
+                    selectedRatio === '4:3' ? 'aspect-[4/3]' :
+                    selectedRatio === 'a4' ? 'aspect-[210/297]' : 'aspect-square'
+                  }`}>
+                    {slide.elements.map((el) => (
+                      <div
+                        key={el.id}
+                        onClick={() => setSelectedElId(el.id)}
+                        style={{
+                          left: `${el.x}%`,
+                          top: `${el.y}%`,
+                          width: `${el.width}px`,
+                          position: 'absolute',
+                          fontFamily: el.fontFamily,
+                          fontSize: `${el.fontSize}px`,
+                          color: el.color,
+                          fontWeight: el.fontWeight || 'normal'
+                        }}
+                        className={`cursor-pointer p-3 rounded-xl transition-all ${
+                          el.glassEffect ? 'glass-panel-orange border border-orange-300' : ''
+                        } ${selectedElId === el.id ? 'ring-2 ring-orange-500 shadow-lg' : ''}`}
+                      >
+                        {el.type === 'image' ? (
+                          <img src={el.content} className="w-full h-auto rounded-lg object-cover shadow" />
+                        ) : (
+                          <textarea
+                            value={el.content}
+                            onChange={(e) => updateSelectedElement({ content: e.target.value })}
+                            className="w-full bg-transparent border-0 resize-none focus:outline-none"
+                            style={{ fontSize: 'inherit', color: 'inherit', fontFamily: 'inherit', fontWeight: 'inherit' }}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </main>
+
+          {isAuthOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+              <div className="bg-white/90 p-8 rounded-3xl max-w-md w-full glass-panel-orange shadow-2xl text-center space-y-4">
+                <h3 className="text-2xl font-extrabold text-slate-900">Google 계정 로그인</h3>
+                <p className="text-xs text-slate-600">Google 계정으로 3초 만에 안전하게 시작하세요.</p>
+                <button onClick={handleGoogleLogin} className="w-full py-3 bg-white text-slate-800 font-bold rounded-2xl border border-orange-200 shadow flex items-center justify-center gap-3">
+                  <svg className="w-5 h-5" viewBox="0 0 24 24">
+                    <path fill="#EA4335" d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.7 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.2 9 5 12 5z"/>
+                    <path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"/>
+                    <path fill="#FBBC05" d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 10.8 0 12s.7 2.3 1.9 4.7l3.7-2.9z"/>
+                    <path fill="#34A853" d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.2-6.4-5.2L1.9 16c1.8 3.7 5.6 7 10.1 7z"/>
+                  </svg>
+                  Google 계정으로 계속하기
+                </button>
+                <button onClick={() => setIsAuthOpen(false)} className="text-xs font-bold text-slate-500 hover:underline">닫기</button>
+              </div>
+            </div>
+          )}
+
+          {isRatioOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+              <div className="bg-white/95 p-8 rounded-3xl max-w-2xl w-full glass-panel-orange shadow-2xl space-y-6">
+                <h3 className="text-2xl font-extrabold text-slate-900 text-center">📐 원하는 포트폴리오 비율 선택</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {ASPECT_RATIOS.map(ratio => (
+                    <button
+                      key={ratio.id}
+                      onClick={() => {
+                        setSelectedRatio(ratio.id);
+                        setIsRatioOpen(false);
+                        setView('editor');
+                        showToast(`${ratio.name} 비율로 에디터가 설정되었습니다!`);
+                      }}
+                      className="p-4 rounded-2xl glass-panel text-left hover:border-orange-500 hover:bg-orange-500/10 transition-all"
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-bold text-slate-900">{ratio.name}</span>
+                        <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-extrabold rounded">{ratio.ratioText}</span>
+                      </div>
+                      <p className="text-xs text-slate-500">{ratio.desc}</p>
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center">
+                  <button onClick={() => setIsRatioOpen(false)} className="text-xs font-bold text-slate-500 hover:underline">취소</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>
